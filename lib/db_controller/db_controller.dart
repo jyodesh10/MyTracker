@@ -16,6 +16,15 @@ class DbController {
     );
   }
   
+
+  Future<List<Map<String, dynamic>>> exportUsersToJson() async {
+    // Use .where().findAll() to select all objects, then call exportJson()
+    final List<Map<String, dynamic>> expensesJsonList = 
+        await isar.expenses.where().exportJson();
+    
+    return expensesJsonList;
+  }
+
   // storeDb(Expenses e) async {
   //   await isar.writeTxn(() async {
   //     await isar.expenses.put(e);
