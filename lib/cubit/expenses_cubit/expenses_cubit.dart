@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:isar/isar.dart';
 import 'package:my_tracker/db/expenses.dart';
@@ -27,6 +28,18 @@ class ExpensesCubit extends Cubit<ExpensesState> {
     try {
       emit(ExpensesLoading());
       var data = await DbController.isar.expenses.filter().dateBetween(DateTime.now().subtract(Duration(days: DateTime.now().day)), DateTime.now()).sortByDateDesc().findAll();
+      category = data.map((e) => e.category).toSet().toList();
+      emit(ExpensesLoaded(expenses: data, category: category));
+    } on Exception {
+      emit(ExpensesError());
+    }
+    
+  }
+
+  fetchExpensesCustom({required DateTimeRange<DateTime> dateRange}) async {
+    try {
+      emit(ExpensesLoading());
+      var data = await DbController.isar.expenses.filter().dateBetween(dateRange.start, dateRange.end).sortByDateDesc().findAll();
       category = data.map((e) => e.category).toSet().toList();
       emit(ExpensesLoaded(expenses: data, category: category));
     } on Exception {

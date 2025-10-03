@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_tracker/cubit/theme_cubit/theme_cubit.dart';
 import 'package:my_tracker/db_controller/db_controller.dart';
 import 'package:my_tracker/themes.dart';
 import 'package:path_provider/path_provider.dart';
@@ -15,21 +17,20 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-
   Future<bool> requestStoragePermission() async {
     // var status = await Permission.storage.status;
     // if (!status.isGranted) {
-      var status = await Permission.storage.request();
+    var status = await Permission.storage.request();
     // }
     return status.isGranted;
   }
-  
+
   Future<File?> getLocalFile(String fileName) async {
     var result = await requestStoragePermission();
 
-    if(result == true) {
+    if (result == true) {
       // 1. Get the path to the Documents directory.
-      final directory = await getDownloadsDirectory(); 
+      final directory = await getDownloadsDirectory();
       // getApplicationDocumentsDirectory();
       if (directory == null) {
         // Handle case where Downloads directory is not available (e.g., on iOS/Web)
@@ -45,37 +46,52 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // Example of using it to save your JSON data
   Future<void> saveJsonData(List<Map<String, dynamic>> jsonData) async {
-      // Convert the List of Maps to a JSON string
-      final jsonString = jsonEncode(jsonData);
+    // Convert the List of Maps to a JSON string
+    final jsonString = jsonEncode(jsonData);
 
-      // Get the file reference
-      final file = await getLocalFile('isar_backup_expenses.json');
+    // Get the file reference
+    final file = await getLocalFile('isar_backup_expenses.json');
 
-      // Write the string to the file
-      await file?.writeAsString(jsonString);
+    // Write the string to the file
+    await file?.writeAsString(jsonString);
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text("Settings", style: titlestyle,),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text("Settings", style: titlestyle(context)),
       ),
-      body: Column(children: [
-        ListTile(
-          leading: Icon(Icons.download_rounded),
-          title: Text("Export Data", style: lighttitlestyle,),
-          onTap: () async {
-             List<Map<String, dynamic>> data = await DbController().exportUsersToJson();
-             saveJsonData(data);
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.dark_mode_rounded),
-          title: Text("Select Theme", style: lighttitlestyle,),
-        ),
-      ],),
+      body: BlocBuilder<ThemeCubit, bool>(
+        builder: (context, state) {
+          return Column(
+            children: [
+              ListTile(
+                leading: Icon(Icons.download_rounded),
+                title: Text("Export Data", style: lighttitlestyle(context)),
+                onTap: () async {
+                  List<Map<String, dynamic>> data = await DbController()
+                      .exportUsersToJson();
+                  saveJsonData(data);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.dark_mode_rounded),
+                title: Text("Dark theme", style: lighttitlestyle(context)),
+                trailing: Switch.adaptive(
+                  value: state,
+                  onChanged: (value) {
+                    // bool val = !value;
+                    context.read<ThemeCubit>().toggleTheme();
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

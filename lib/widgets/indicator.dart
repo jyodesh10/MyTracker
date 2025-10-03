@@ -34,7 +34,7 @@ class Indicator extends StatelessWidget {
         ),
         Text(
           text,
-          style: lighttitlestyle.copyWith(fontSize: 11.sp, overflow: TextOverflow.ellipsis),
+          style: lighttitlestyle(context).copyWith(fontSize: 11.sp, overflow: TextOverflow.ellipsis),
           overflow: TextOverflow.ellipsis,
         )
       ],

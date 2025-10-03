@@ -95,7 +95,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Add Expense", style: titlestyle.copyWith(color: Colors.blueAccent)),
+        title: Text("Add Expense", style: titlestyle(context).copyWith(color: Colors.blueAccent)),
       ),
       body: Column(
         children: [
@@ -116,12 +116,12 @@ class _AddExpensePageState extends State<AddExpensePage> {
                       children: [
                         Text(
                           "€  ",
-                          style: lighttitlestyle.copyWith(fontSize: 20.sp),
+                          style: lighttitlestyle(context).copyWith(fontSize: 20.sp),
                         ),
                         Flexible(
                           child: Text(
                             state.toString(),
-                            style: titlestyle.copyWith(fontSize: 24.sp, overflow: TextOverflow.ellipsis,),
+                            style: titlestyle(context).copyWith(fontSize: 24.sp, overflow: TextOverflow.ellipsis,),
                             maxLines: 1,
                             overflow: TextOverflow.fade,
                           ),
@@ -136,7 +136,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ListTile(
-                    title: Text("Category", style: lighttitlestyle),
+                    title: Text("Category", style: lighttitlestyle(context)),
                     subtitle: DropdownButtonFormField(
                       items: categorys
                           .map(
@@ -144,14 +144,14 @@ class _AddExpensePageState extends State<AddExpensePage> {
                               value: e.toString(),
                               child: Text(
                                 e.toString(),
-                                style: lighttitlestyle.copyWith(fontSize: 15.sp),
+                                style: lighttitlestyle(context).copyWith(fontSize: 15.sp),
                               ),
                             ),
                           )
                           .toList(),
                       decoration: InputDecoration(
                         hintText: "select category",
-                        hintStyle: lighttitlestyle.copyWith(fontSize: 15.sp),
+                        hintStyle: lighttitlestyle(context).copyWith(fontSize: 15.sp),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(15.sp)
                         )
@@ -190,11 +190,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
                     // ),
                   ),
                   ListTile(
-                    title: Text("Description", style: lighttitlestyle),
+                    title: Text("Description", style: lighttitlestyle(context)),
                     subtitle: TextField(
                       controller: descriptionCon,
                       maxLines: 2,
-                      style: lighttitlestyle.copyWith(fontSize: 15.sp),
+                      style: lighttitlestyle(context).copyWith(fontSize: 15.sp),
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(15.sp)
@@ -206,7 +206,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                     onPressed: () {
                       pickDate();
                     }, 
-                    child: Text("Choose Date: ${dateFormatter(selectedDate)}", style: lighttitlestyle,)
+                    child: Text("Choose Date: ${dateFormatter(selectedDate)}", style: lighttitlestyle(context),)
                   ),
                 ],
               )
@@ -275,7 +275,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               backgroundColor: Colors.red.shade400,
-                              content: Text("Select a category!", style: lighttitlestyle.copyWith(fontSize: 15.sp, color: Colors.white),),
+                              content: Text("Select a category!", style: lighttitlestyle(context).copyWith(fontSize: 15.sp, color: Colors.white),),
                             )
                           );
                         }
@@ -289,7 +289,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                       child: Center(
                         child: Text(
                           calInputs[index].toString(),
-                          style: titlestyle.copyWith(fontSize: 20.sp, color: Colors.blueAccent),
+                          style: titlestyle(context).copyWith(fontSize: 20.sp, color: Colors.blueAccent),
                         ),
                       ),
                     ),

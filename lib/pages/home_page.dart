@@ -7,6 +7,7 @@ import 'package:my_tracker/pages/add_expense_page.dart';
 import 'package:my_tracker/pages/edit_expense_page.dart';
 import 'package:my_tracker/pages/settings_page.dart';
 import 'package:my_tracker/utils/dateformatter.dart';
+import 'package:my_tracker/utils/shared_pref.dart';
 import 'package:my_tracker/widgets/indicator.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
@@ -46,172 +47,192 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 3, vsync: this, animationDuration: Duration(milliseconds: 100))..addListener(() {
+    tabController = TabController(initialIndex: SharedPref.read("tab") ?? 0, length: 4, vsync: this, animationDuration: Duration(milliseconds: 100))..addListener(() {
       handleTabChange(tabController.index);
     },);
   }
 
-  void handleTabChange(int value) {
+  void handleTabChange(int value) async {
     if (tab == value) return; // Do nothing if tab hasn't changed
     tab = value;
+    SharedPref.write("tab", value);
     if (value == 0) {
       context.read<ExpensesCubit>().fetchExpenses();
     } else if (value == 1) {
       context.read<ExpensesCubit>().fetchExpensesToday();
-    } else {
+    } else if (value == 2) {
       context.read<ExpensesCubit>().fetchExpensesThisMonth();
+    } else {
+      DateTimeRange<DateTime>? dateRange = await showDateRangePicker(
+        context: context, 
+        barrierColor: Colors.white,
+        firstDate: DateTime(2001), 
+        lastDate: DateTime(2050),
+        // builder: (context, child) => Theme(
+        //   data: ThemeD, 
+        //   child: child!
+        // ),
+
+      );
+      if(dateRange !=null) {
+        if(mounted) {
+          context.read<ExpensesCubit>().fetchExpensesCustom(dateRange: dateRange);
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: BlocBuilder<ExpensesCubit, ExpensesState>(
-                builder: (context, state) {
-                  return Column(
-                    children: [
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          AspectRatio(
-                            aspectRatio: 1.4,
-                            child: PieChart(
-                              PieChartData(
-                                centerSpaceRadius: 40.sp,
-                                sectionsSpace: 5.sp,
-                                sections: state is ExpensesLoaded 
-                                  ? List.generate(state.category.length , (index) {
-                                    cat = state.category.map((e) => {
-                                      "name": e,
-                                      "color": harmoniousColors[index % harmoniousColors.length],
-                                    }).toList();
-                                    return PieChartSectionData(
-                                      value: double.parse(sumup(state.expenses.where((e) => e.category == state.category[index]).toList().map((e) => double.parse(e.amount.toString())).toList())),
-                                      title: state.category[index],
-                                      titleStyle: lighttitlestyle.copyWith(fontSize: 12.sp),
-                                      color: harmoniousColors[index % harmoniousColors.length],
-                                      radius: 22.sp,
-                                      showTitle: false,
-                                      titlePositionPercentageOffset: 2,
-                                    );
-                                  })
-                                  : [
-                                    PieChartSectionData(
-                                      badgePositionPercentageOffset: 0.5,
-                                    ),
-                                    PieChartSectionData(
-                                      badgePositionPercentageOffset: 0.5,
-                                    ),
-                                    PieChartSectionData(
-                                      badgePositionPercentageOffset: 0.5,
-                                    ),
-                                  ],
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverToBoxAdapter(
+                child: BlocBuilder<ExpensesCubit, ExpensesState>(
+                  builder: (context, state) {
+                    return Column(
+                      children: [
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            AspectRatio(
+                              aspectRatio: 1.4,
+                              child: PieChart(
+                                PieChartData(
+                                  centerSpaceRadius: 40.sp,
+                                  sectionsSpace: 5.sp,
+                                  sections: state is ExpensesLoaded 
+                                    ? List.generate(state.category.length , (index) {
+                                      cat = state.category.map((e) => {
+                                        "name": e,
+                                        "color": harmoniousColors[index % harmoniousColors.length],
+                                      }).toList();
+                                      return PieChartSectionData(
+                                        value: double.parse(sumup(state.expenses.where((e) => e.category == state.category[index]).toList().map((e) => double.parse(e.amount.toString())).toList())),
+                                        title: state.category[index],
+                                        titleStyle: lighttitlestyle(context).copyWith(fontSize: 12.sp),
+                                        color: harmoniousColors[index % harmoniousColors.length],
+                                        radius: 22.sp,
+                                        showTitle: false,
+                                        titlePositionPercentageOffset: 2,
+                                      );
+                                    })
+                                    : [
+                                      PieChartSectionData(
+                                        badgePositionPercentageOffset: 0.5,
+                                      ),
+                                      PieChartSectionData(
+                                        badgePositionPercentageOffset: 0.5,
+                                      ),
+                                      PieChartSectionData(
+                                        badgePositionPercentageOffset: 0.5,
+                                      ),
+                                    ],
+                                ),
                               ),
                             ),
-                          ),
-                          AnimatedContainer(
-                            duration: Duration(seconds: 2),
-                            curve: Curves.fastEaseInToSlowEaseOut,
-                            child: Text(
-                              state is ExpensesLoaded
-                                ? "€ ${sumup(state.expenses.map((e) => double.parse(e.amount.toString())).toList())}"
-                                : "€ 000",
-                              style: titlestyle.copyWith(
-                                color: Colors.blueAccent,
-                                fontSize: 22.sp,
+                            AnimatedContainer(
+                              duration: Duration(seconds: 2),
+                              curve: Curves.fastEaseInToSlowEaseOut,
+                              child: Text(
+                                state is ExpensesLoaded
+                                  ? "€ ${sumup(state.expenses.map((e) => double.parse(e.amount.toString())).toList())}"
+                                  : "€ 000",
+                                style: titlestyle(context).copyWith(
+                                  color: Colors.blueAccent,
+                                  fontSize: 22.sp,
+                                ),
                               ),
                             ),
-                          ),
-                          Positioned(
-                            top: 10.sp,
-                            right: 15.sp,
-                            child: IconButton(
-                              onPressed: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage()));
-                              }, 
-                              icon: Icon(Icons.settings)
-                            ))
-                        ],
-                      ),
-                      state is ExpensesLoaded
-                        ? GridView.count(
-                          padding: EdgeInsets.symmetric(horizontal: 10.sp),
-                          crossAxisCount: 4,
-                          shrinkWrap: true,
-                          childAspectRatio: 5,
-                          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          // crossAxisAlignment: CrossAxisAlignment.start,
-                          children: List.generate(state.category.length, (index) {
-                            return Indicator(
-                              color: harmoniousColors[index % harmoniousColors.length],
-                              text: state.category[index].toString(),
-                              isSquare: true,
-                            );
-                          }),
-                        )
-                        : SizedBox()
-                    ],
-                  );
-                },
+                            Positioned(
+                              top: 10.sp,
+                              right: 15.sp,
+                              child: IconButton(
+                                onPressed: () {
+                                  Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage()));
+                                }, 
+                                icon: Icon(Icons.settings)
+                              ))
+                          ],
+                        ),
+                        state is ExpensesLoaded
+                          ? GridView.count(
+                            padding: EdgeInsets.symmetric(horizontal: 10.sp),
+                            crossAxisCount: 4,
+                            shrinkWrap: true,
+                            childAspectRatio: 5,
+                            // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            // crossAxisAlignment: CrossAxisAlignment.start,
+                            children: List.generate(state.category.length, (index) {
+                              return Indicator(
+                                color: harmoniousColors[index % harmoniousColors.length],
+                                text: state.category[index].toString(),
+                                isSquare: true,
+                              );
+                            }),
+                          )
+                          : SizedBox()
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-            SliverAppBar(
-              backgroundColor: Colors.white,
-              surfaceTintColor: Colors.white,
-              pinned: true,
-              elevation: 0,
-              titleSpacing: 0,
-              bottom: PreferredSize(
-                preferredSize: Size(100.w, 18.sp), 
-                child: Padding(
-                  padding: EdgeInsets.all(15.sp),
-                  child: TabBar(
-                    controller: tabController,
-                    indicatorColor: Colors.blueAccent,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    indicatorWeight: 2.sp,
-                    labelColor: Colors.blueAccent,
-                    dividerHeight: 0,
-                    labelStyle: lighttitlestyle.copyWith(fontSize: 14.sp),
-                    onTap: (value) {
-                      handleTabChange(value);
-                    },
-                    tabs: [
-                      Tab(text: "All"),
-                      Tab(text: "Today"),
-                      Tab(text: "This month"),
-                    ],
+              SliverAppBar(
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                surfaceTintColor: Colors.white,
+                pinned: true,
+                elevation: 0,
+                titleSpacing: 0,
+                bottom: PreferredSize(
+                  preferredSize: Size(100.w, 18.sp), 
+                  child: Padding(
+                    padding: EdgeInsets.all(15.sp),
+                    child: TabBar(
+                      controller: tabController,
+                      indicatorColor: Colors.blueAccent,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicatorWeight: 2.sp,
+                      labelColor: Colors.blueAccent,
+                      dividerHeight: 0,
+                      labelStyle: lighttitlestyle(context).copyWith(fontSize: 14.sp),
+                      onTap: (value) {
+                        handleTabChange(value);
+                      },
+                      tabs: [
+                        Tab(text: "All"),
+                        Tab(text: "Today"),
+                        Tab(text: "This month"),
+                        Tab(text: "Custom"),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            SliverFillRemaining(
-              child: BlocBuilder<ExpensesCubit, ExpensesState>(
-                builder: (context, state) {
-                  if (state is ExpensesLoaded) {
-                    return TabBarView(
-                      controller: tabController,
-                      children: [
-                        _buildExpensesListView(state),
-                        _buildExpensesListView(state),
-                        _buildExpensesListView(state),
-                      ],
-                    );
-                    
-                  } else if (state is ExpensesLoading) {
-                    return Center(child: CircularProgressIndicator());
-                  } else {
-                    return Center(child: CircularProgressIndicator());
-                  }
-                },
-              )
-            )
-          ],
+            ];
+          },
+          body: BlocBuilder<ExpensesCubit, ExpensesState>(
+            builder: (context, state) {
+              if (state is ExpensesLoaded) {
+                return TabBarView(
+                  controller: tabController,
+                  children: [
+                    _buildExpensesListView(state),
+                    _buildExpensesListView(state),
+                    _buildExpensesListView(state),
+                    _buildExpensesListView(state),
+                  ],
+                );
+                
+              } else if (state is ExpensesLoading) {
+                return Center(child: CircularProgressIndicator());
+              } else {
+                return Center(child: CircularProgressIndicator());
+              }
+            },
+          )
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -231,9 +252,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   
   _buildExpensesListView(ExpensesLoaded state) {
     return ListView.builder(
-      shrinkWrap: true,
       itemCount: state.expenses.length,
-      physics: NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.only(bottom: 30.sp),
       itemBuilder: (context, index) {
         return ListTile(
           contentPadding: EdgeInsets.only(left: 15.sp),
@@ -241,7 +261,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             backgroundColor: harmoniousColors[cat.indexWhere((e) => e["name"] == state.expenses[index].category) % harmoniousColors.length], 
             radius: 15.sp,
             child: Text(state.expenses[index].category.toString()[0], 
-              style: titlestyle.copyWith(
+              style: titlestyle(context).copyWith(
                 color: Colors.white,
                 fontSize: 14.sp,
               ), 
@@ -249,11 +269,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ),
           title: Text(
             state.expenses[index].category.toString(),
-            style: lighttitlestyle,
+            style: lighttitlestyle(context),
           ),
           subtitle: Text(
             state.expenses[index].description.toString(),
-            style: lighttitlestyle.copyWith(
+            style: lighttitlestyle(context).copyWith(
               color: Colors.grey,
               fontSize: 14.sp,
             ),
@@ -267,14 +287,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 children: [
                   Text(
                     "- € ${state.expenses[index].amount.toString()}",
-                    style: lighttitlestyle.copyWith(
+                    style: lighttitlestyle(context).copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.red,
                     ),
                   ),
                   Text(
                     dateFormatter(state.expenses[index].date),
-                    style: lighttitlestyle.copyWith(
+                    style: lighttitlestyle(context).copyWith(
                       color: Colors.grey,
                       fontSize: 14.sp,
                     ),
@@ -291,7 +311,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 itemBuilder: (context) {
                   return [
                     PopupMenuItem(
-                      labelTextStyle:WidgetStateProperty.all(lighttitlestyle.copyWith(fontSize: 15.sp)),
+                      labelTextStyle:WidgetStateProperty.all(lighttitlestyle(context).copyWith(fontSize: 15.sp)),
                       child: Text("Edit"),
                       onTap: () {
                         context.read<AmountCubit>().clear();
@@ -301,14 +321,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       },
                     ),
                     PopupMenuItem(
-                      labelTextStyle:WidgetStateProperty.all(lighttitlestyle.copyWith(fontSize: 15.sp)),
+                      labelTextStyle:WidgetStateProperty.all(lighttitlestyle(context).copyWith(fontSize: 15.sp)),
                       child: Text("Delete"),
                       onTap: () {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: Text("Delete Expense", style: titlestyle.copyWith(fontSize: 16.sp),),
-                            content: Text("Are you sure you want to delete this expense?", style: lighttitlestyle.copyWith(fontSize: 15.sp)),
+                            title: Text("Delete Expense", style: titlestyle(context).copyWith(fontSize: 16.sp),),
+                            content: Text("Are you sure you want to delete this expense?", style: lighttitlestyle(context).copyWith(fontSize: 15.sp)),
                             backgroundColor: Colors.white,
                             shape: RoundedSuperellipseBorder(
                               borderRadius: BorderRadius.circular(15.sp),
@@ -318,14 +338,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                 onPressed: () {
                                   Navigator.pop(context);
                                 },
-                                child: Text("Cancel", style: lighttitlestyle.copyWith(fontSize: 15.sp),),
+                                child: Text("Cancel", style: lighttitlestyle(context).copyWith(fontSize: 15.sp),),
                               ),
                               TextButton(
                                 onPressed: () {
                                   context.read<ExpensesCubit>().deleteItem(id: state.expenses[index].id, tab: tab);
                                   Navigator.pop(context);
                                 },
-                                child: Text("Delete", style: lighttitlestyle.copyWith(fontSize: 15.sp, color: Colors.red),),
+                                child: Text("Delete", style: lighttitlestyle(context).copyWith(fontSize: 15.sp, color: Colors.red),),
                               ),
                             ],
                           ),
@@ -335,11 +355,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   ];
                 },
               )
-              // IconButton(
-              //   onPressed: () {
-              //   },
-              //   icon: Icon(Icons.more_vert_rounded, color: Colors.blueAccent),
-              // ),
             ],
           ),
         );
