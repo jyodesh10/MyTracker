@@ -39,6 +39,7 @@ dependencies:
   google_fonts: ^6.3.0
   responsive_sizer: ^3.3.1
   isar: ^3.1.0+1
+  # isar_flutter_libs: ^3.1.0+1
   isar_flutter_libs:
     git: 
       url: https://github.com/MrLittleWhite/isar_flutter_libs.git
@@ -47,6 +48,8 @@ dependencies:
   fl_chart: ^0.67.0
   permission_handler: ^12.0.1
   shared_preferences: ^2.5.3
+  open_file_manager: ^2.0.1
+  file_picker: ^10.3.3
 
 dev_dependencies:
   flutter_test:

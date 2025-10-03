@@ -1,5 +1,7 @@
 
 
+import 'dart:typed_data';
+
 import 'package:isar/isar.dart';
 import 'package:my_tracker/db/category.dart';
 import 'package:my_tracker/db/expenses.dart';
@@ -13,11 +15,12 @@ class DbController {
     isar = await Isar.open(
       [ExpensesSchema, CategorySchema],
       directory: dir.path,
+      inspector: true, 
     );
   }
   
 
-  Future<List<Map<String, dynamic>>> exportUsersToJson() async {
+  Future<List<Map<String, dynamic>>> exportExpenses() async {
     // Use .where().findAll() to select all objects, then call exportJson()
     final List<Map<String, dynamic>> expensesJsonList = 
         await isar.expenses.where().exportJson();
@@ -25,14 +28,16 @@ class DbController {
     return expensesJsonList;
   }
 
-  // storeDb(Expenses e) async {
-  //   await isar.writeTxn(() async {
-  //     await isar.expenses.put(e);
-  //   });
-  // }
 
-  // Future<List<Expenses>> readDb() async {
-  //   final existingexpenses = await isar.expenses.where().findAll(); // get
-  //   return existingexpenses;
-  // }
+  static Future<void> importExpenses(Uint8List jsonBytes) async {
+    await isar.writeTxn(() async {
+      await isar.expenses.importJsonRaw(jsonBytes);
+    });
+  }
+
+  static Future<void> deleteAllExpenses() async {
+    await isar.writeTxn(() async {
+      await isar.expenses.clear();
+    });
+  }
 }

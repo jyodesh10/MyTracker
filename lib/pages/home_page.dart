@@ -7,6 +7,7 @@ import 'package:my_tracker/pages/add_expense_page.dart';
 import 'package:my_tracker/pages/edit_expense_page.dart';
 import 'package:my_tracker/pages/settings_page.dart';
 import 'package:my_tracker/utils/dateformatter.dart';
+import 'package:my_tracker/utils/dialogs.dart';
 import 'package:my_tracker/utils/shared_pref.dart';
 import 'package:my_tracker/widgets/indicator.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
@@ -68,11 +69,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         barrierColor: Colors.white,
         firstDate: DateTime(2001), 
         lastDate: DateTime(2050),
-        // builder: (context, child) => Theme(
-        //   data: ThemeD, 
-        //   child: child!
-        // ),
-
       );
       if(dateRange !=null) {
         if(mounted) {
@@ -152,7 +148,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                               right: 15.sp,
                               child: IconButton(
                                 onPressed: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage()));
+                                  Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage(tab: tab,)));
                                 }, 
                                 icon: Icon(Icons.settings)
                               ))
@@ -182,7 +178,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               ),
               SliverAppBar(
                 backgroundColor: Theme.of(context).colorScheme.surface,
-                surfaceTintColor: Colors.white,
+                surfaceTintColor: Theme.of(context).colorScheme.surface,
                 pinned: true,
                 elevation: 0,
                 titleSpacing: 0,
@@ -302,7 +298,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 ],
               ),
               PopupMenuButton(
-                color: Colors.white.withAlpha(250),
+                color: Theme.of(context).colorScheme.surfaceBright /* Colors.white.withAlpha(250) */,
                 borderRadius: BorderRadius.circular(15.sp),
                 shape: RoundedSuperellipseBorder(
                   borderRadius: BorderRadius.circular(15.sp),
@@ -324,31 +320,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       labelTextStyle:WidgetStateProperty.all(lighttitlestyle(context).copyWith(fontSize: 15.sp)),
                       child: Text("Delete"),
                       onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text("Delete Expense", style: titlestyle(context).copyWith(fontSize: 16.sp),),
-                            content: Text("Are you sure you want to delete this expense?", style: lighttitlestyle(context).copyWith(fontSize: 15.sp)),
-                            backgroundColor: Colors.white,
-                            shape: RoundedSuperellipseBorder(
-                              borderRadius: BorderRadius.circular(15.sp),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: Text("Cancel", style: lighttitlestyle(context).copyWith(fontSize: 15.sp),),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  context.read<ExpensesCubit>().deleteItem(id: state.expenses[index].id, tab: tab);
-                                  Navigator.pop(context);
-                                },
-                                child: Text("Delete", style: lighttitlestyle(context).copyWith(fontSize: 15.sp, color: Colors.red),),
-                              ),
-                            ],
-                          ),
+                        CustomDialogs.deleteDialog(
+                          context, 
+                          title: "Delete Expense", 
+                          content: "Are you sure you want to delete this expense?",
+                          onPressed: () {
+                            context.read<ExpensesCubit>().deleteItem(id: state.expenses[index].id, tab: tab);
+                            Navigator.pop(context);
+                          },
                         );
                       },
                     )
