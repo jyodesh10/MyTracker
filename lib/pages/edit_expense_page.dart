@@ -9,11 +9,13 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 
 import '../cubit/currency_cubit/currency_cubit.dart';
 import '../cubit/expenses_cubit/expenses_cubit.dart';
+import '../utils/shared_pref.dart';
 
 class EditExpensePage extends StatefulWidget {
-  const EditExpensePage({super.key, required this.tab, required this.expenseData});
+  const EditExpensePage({super.key, required this.tab, required this.expenseData, required this.editAmount});
   final int tab;
   final Expenses expenseData;
+  final String editAmount;
 
   @override
   State<EditExpensePage> createState() => _EditExpensePageState();
@@ -92,7 +94,7 @@ class _EditExpensePageState extends State<EditExpensePage> {
     descriptionCon.text = widget.expenseData.description.toString();
     selectedCategory = widget.expenseData.category.toString();
     selectedDate = widget.expenseData.date;
-    context.read<AmountCubit>().setAmount(widget.expenseData.amount.toString());  
+    context.read<AmountCubit>().setAmount(widget.editAmount);
   }
 
   @override
@@ -131,7 +133,7 @@ class _EditExpensePageState extends State<EditExpensePage> {
                         ),
                         Flexible(
                           child: Text(
-                            state.toString(),
+                            state,
                             style: titlestyle(context).copyWith(fontSize: 24.sp, overflow: TextOverflow.ellipsis,),
                             maxLines: 1,
                             overflow: TextOverflow.fade,
@@ -235,9 +237,24 @@ class _EditExpensePageState extends State<EditExpensePage> {
                       //   context.read<CategoryCubit>().addCategories();
                       } else if (calInputs[index] == "✔️") {
                         if(selectedCategory != "") {
+                          String actualamt = "";
+                          if(SharedPref.read("selectedCurrency")!=null) {
+                            switch(SharedPref.read("selectedCurrency")) {
+                              case "\$":
+                              actualamt = (double.parse(context.read<AmountCubit>().userValue)/ SharedPref.read("USD")).toStringAsFixed(2);
+                              break;
+                              case "Rs.":
+                              actualamt = (double.parse(context.read<AmountCubit>().userValue)/ (SharedPref.read("INR")*1.6)).toString();
+                              break;
+                              default:
+                              actualamt = context.read<AmountCubit>().userValue;
+                            }
+                          } else {
+                            actualamt = context.read<AmountCubit>().userValue;
+                          }
                           final amt = Expenses()
                             ..id = widget.expenseData.id
-                            ..amount = context.read<AmountCubit>().userValue
+                            ..amount = actualamt
                             ..category = selectedCategory
                             ..description = descriptionCon.text
                             ..date = selectedDate;

@@ -26,11 +26,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   int tab = 0;
 
   sumup(List<double> amt) {
-    double todouble = double.parse(amt.fold(0.0, (p, c) => p + c).toStringAsFixed(2));
+    double todouble = double.parse(amt.fold(0.0, (p, c) => p + c).toString());
     if(context.watch<CurrencyCubit>().state == "€") {
       return amt.fold(0.0, (p, c) => p + c).toStringAsFixed(2);
     } else if(context.watch<CurrencyCubit>().state == "Rs.") {
-      double inr = double.parse(SharedPref.read("INR").toString());
+      double inr = SharedPref.read("INR");
       return (todouble * inr * 1.6).toStringAsFixed(2);
     } else {
       double usd = double.parse(SharedPref.read("USD").toString());
@@ -104,6 +104,18 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           context.read<ExpensesCubit>().fetchExpensesCustom(dateRange: dateRange);
         }
       }
+    }
+  }
+
+  String listCurrencyAmt(String amt) {
+    if(context.watch<CurrencyCubit>().state == "€") {
+      return double.parse(amt).toStringAsFixed(2);
+    } else if(context.watch<CurrencyCubit>().state == "Rs.") {
+      double inr = SharedPref.read("INR");
+      return (double.parse(amt) * inr * 1.6).toStringAsFixed(2);
+    } else {
+      double usd = double.parse(SharedPref.read("USD").toString());
+      return (double.parse(amt) * usd).toStringAsFixed(2);
     }
   }
 
@@ -314,9 +326,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             mainAxisSize: MainAxisSize.min,
             children: [
               Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    "- ${getCurrency()} ${state.expenses[index].amount.toString()}",
+                    "- ${getCurrency()} ${listCurrencyAmt(state.expenses[index].amount.toString())}",
                     style: lighttitlestyle(context).copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.red,
@@ -346,7 +359,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       onTap: () {
                         context.read<AmountCubit>().clear();
                         Navigator.push(context, MaterialPageRoute(
-                          builder: (context) => EditExpensePage(tab: tab, expenseData: state.expenses[index],),
+                          builder: (context) => EditExpensePage(tab: tab, expenseData: state.expenses[index], editAmount: listCurrencyAmt(state.expenses[index].amount.toString()),),
                         ));
                       },
                     ),

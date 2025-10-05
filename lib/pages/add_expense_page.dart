@@ -246,10 +246,10 @@ class _AddExpensePageState extends State<AddExpensePage> {
                           if(SharedPref.read("selectedCurrency")!=null) {
                             switch(SharedPref.read("selectedCurrency")) {
                               case "\$":
-                              actualamt = (double.parse(context.read<AmountCubit>().userValue)/ SharedPref.read("EUR")).toStringAsFixed(2);
+                              actualamt = (double.parse(context.read<AmountCubit>().userValue)/ SharedPref.read("USD")).toStringAsFixed(2);
                               break;
                               case "Rs.":
-                              actualamt = (double.parse(context.read<AmountCubit>().userValue)/ SharedPref.read("EUR")).toStringAsFixed(2);
+                              actualamt = (double.parse(context.read<AmountCubit>().userValue)/ (SharedPref.read("INR")*1.6)).toString();
                               break;
                               default:
                               actualamt = context.read<AmountCubit>().userValue;
