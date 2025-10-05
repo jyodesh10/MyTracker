@@ -7,7 +7,9 @@ import 'package:my_tracker/themes.dart';
 import 'package:my_tracker/utils/dateformatter.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
+import '../cubit/currency_cubit/currency_cubit.dart';
 import '../cubit/expenses_cubit/expenses_cubit.dart';
+import '../utils/shared_pref.dart';
 
 class AddExpensePage extends StatefulWidget {
   const AddExpensePage({super.key, required this.tab});
@@ -57,22 +59,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
   pickDate() async {
     DateTime? pickedDate = await showDatePicker(
-      context: context, 
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.light(
-            primary: Colors.blueAccent,
-            onPrimary: Colors.white,
-            onSurface: Colors.black,
-          ),
-          textButtonTheme: TextButtonThemeData(
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.blueAccent,
-            ),
-          ),
-        ),
-        child: child!,
-      ),
+      context: context,
       firstDate: DateTime(1999), 
       lastDate: DateTime(2050),
       currentDate: DateTime.now(),
@@ -80,7 +67,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
     );
 
     setState(() {
-      selectedDate = pickedDate!;
+      if(pickedDate != null) {
+        selectedDate = pickedDate;
+      } else {
+        selectedDate = DateTime.now();
+      }
     });
   }
 
@@ -115,7 +106,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "€  ",
+                          "${context.watch<CurrencyCubit>().state}  ",
                           style: lighttitlestyle(context).copyWith(fontSize: 20.sp),
                         ),
                         Flexible(
@@ -251,8 +242,23 @@ class _AddExpensePageState extends State<AddExpensePage> {
                       //   context.read<CategoryCubit>().addCategories();
                       } else if (calInputs[index] == "✔️") {
                         if(selectedCategory != "") {
+                          String actualamt = "";
+                          if(SharedPref.read("selectedCurrency")!=null) {
+                            switch(SharedPref.read("selectedCurrency")) {
+                              case "\$":
+                              actualamt = (double.parse(context.read<AmountCubit>().userValue)/ SharedPref.read("EUR")).toStringAsFixed(2);
+                              break;
+                              case "Rs.":
+                              actualamt = (double.parse(context.read<AmountCubit>().userValue)/ SharedPref.read("EUR")).toStringAsFixed(2);
+                              break;
+                              default:
+                              actualamt = context.read<AmountCubit>().userValue;
+                            }
+                          } else {
+                            actualamt = context.read<AmountCubit>().userValue;
+                          }
                           final amt = Expenses()
-                            ..amount = context.read<AmountCubit>().userValue
+                            ..amount = actualamt
                             ..category = selectedCategory
                             ..description = descriptionCon.text
                             ..date = selectedDate;

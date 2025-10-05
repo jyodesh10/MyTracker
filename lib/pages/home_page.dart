@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_tracker/cubit/amount_cubit/amount_cubit.dart';
+import 'package:my_tracker/cubit/currency_cubit/currency_cubit.dart';
 import 'package:my_tracker/cubit/expenses_cubit/expenses_cubit.dart';
 import 'package:my_tracker/pages/add_expense_page.dart';
 import 'package:my_tracker/pages/edit_expense_page.dart';
@@ -25,7 +26,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   int tab = 0;
 
   sumup(List<double> amt) {
-    return amt.fold(0.0, (p, c) => p + c).toStringAsFixed(2);
+    double todouble = double.parse(amt.fold(0.0, (p, c) => p + c).toStringAsFixed(2));
+    if(context.watch<CurrencyCubit>().state == "€") {
+      return amt.fold(0.0, (p, c) => p + c).toStringAsFixed(2);
+    } else if(context.watch<CurrencyCubit>().state == "Rs.") {
+      double inr = double.parse(SharedPref.read("INR").toString());
+      return (todouble * inr * 1.6).toStringAsFixed(2);
+    } else {
+      double usd = double.parse(SharedPref.read("USD").toString());
+      return (todouble * usd).toStringAsFixed(2);
+    }
+    // return amt.fold(0.0, (p, c) => p + c).toStringAsFixed(2);
   }
 
   Color interpolateColor(Color start, Color end, double t) {
@@ -45,14 +56,32 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
   late TabController tabController;
   List<Map> cat = [];
+
   @override
   void initState() {
     super.initState();
+    firstTimeLaunch();
     tabController = TabController(initialIndex: SharedPref.read("tab") ?? 0, length: 4, vsync: this, animationDuration: Duration(milliseconds: 100))..addListener(() {
       handleTabChange(tabController.index);
     },);
   }
 
+  String currency = "€";
+
+  String getCurrency() {
+    currency = context.watch<CurrencyCubit>().state;
+    return currency;
+  }
+
+  firstTimeLaunch() async {
+    if(SharedPref.read("firstTime") == null || SharedPref.read("firstTime") == true) {
+      SharedPref.write("firstTime", false);
+      context.read<CurrencyCubit>().fetchCurrency();
+    } else {
+      SharedPref.write("firstTime", false);
+    }
+  }
+  
   void handleTabChange(int value) async {
     if (tab == value) return; // Do nothing if tab hasn't changed
     tab = value;
@@ -130,18 +159,23 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                 ),
                               ),
                             ),
-                            AnimatedContainer(
-                              duration: Duration(seconds: 2),
-                              curve: Curves.fastEaseInToSlowEaseOut,
-                              child: Text(
-                                state is ExpensesLoaded
-                                  ? "€ ${sumup(state.expenses.map((e) => double.parse(e.amount.toString())).toList())}"
-                                  : "€ 000",
-                                style: titlestyle(context).copyWith(
-                                  color: Colors.blueAccent,
-                                  fontSize: 22.sp,
-                                ),
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxHeight: 40.sp,
+                                maxWidth: 45.w,
                               ),
+                              child: FittedBox(
+                                child: Text(
+                                  state is ExpensesLoaded
+                                    ? "${getCurrency()} ${sumup(state.expenses.map((e) => double.parse(e.amount.toString())).toList())}"
+                                    : "${getCurrency()} 000",
+                                  style: titlestyle(context).copyWith(
+                                    color: Colors.blueAccent,
+                                    fontSize: 22.sp,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                              )
                             ),
                             Positioned(
                               top: 10.sp,
@@ -282,7 +316,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               Column(
                 children: [
                   Text(
-                    "- € ${state.expenses[index].amount.toString()}",
+                    "- ${getCurrency()} ${state.expenses[index].amount.toString()}",
                     style: lighttitlestyle(context).copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.red,

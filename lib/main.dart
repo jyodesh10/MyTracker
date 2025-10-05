@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_tracker/cubit/category_cubit/category_cubit.dart';
+import 'package:my_tracker/cubit/currency_cubit/currency_cubit.dart';
 import 'package:my_tracker/cubit/expenses_cubit/expenses_cubit.dart';
 import 'package:my_tracker/cubit/theme_cubit/theme_cubit.dart';
 import 'package:my_tracker/db_controller/db_controller.dart';
@@ -64,9 +65,12 @@ class MyApp extends StatelessWidget {
               BlocProvider(
                 create: (context) => CategoryCubit()..addCategories(),
               ),
+              BlocProvider(
+                create: (context) => CurrencyCubit()..checkcurrency(),
+              ),
             ],
             child: MaterialApp(
-              title: 'Flutter Demo',
+              title: 'My Tracker',
               debugShowCheckedModeBanner: false,
               theme: lightTheme,
               darkTheme: darkTheme,

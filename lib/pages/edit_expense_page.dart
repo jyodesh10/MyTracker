@@ -7,6 +7,7 @@ import 'package:my_tracker/themes.dart';
 import 'package:my_tracker/utils/dateformatter.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
+import '../cubit/currency_cubit/currency_cubit.dart';
 import '../cubit/expenses_cubit/expenses_cubit.dart';
 
 class EditExpensePage extends StatefulWidget {
@@ -125,7 +126,7 @@ class _EditExpensePageState extends State<EditExpensePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "€  ",
+                          "${context.watch<CurrencyCubit>().state}  ",
                           style: lighttitlestyle(context).copyWith(fontSize: 20.sp),
                         ),
                         Flexible(

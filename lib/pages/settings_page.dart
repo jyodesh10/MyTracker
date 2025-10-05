@@ -5,12 +5,14 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_tracker/cubit/currency_cubit/currency_cubit.dart';
 import 'package:my_tracker/cubit/theme_cubit/theme_cubit.dart';
 import 'package:my_tracker/db_controller/db_controller.dart';
 import 'package:my_tracker/themes.dart';
 import 'package:open_file_manager/open_file_manager.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 
 import '../cubit/expenses_cubit/expenses_cubit.dart';
 import '../utils/dialogs.dart';
@@ -73,14 +75,21 @@ class _SettingsPageState extends State<SettingsPage> {
     if (result != null) {
       File file = File(result.files.single.path!);
       Uint8List jsonBytes = file.readAsBytesSync();
-      
+
       // jsonDecode(await file.readAsString());
       await DbController.importExpenses(jsonBytes).whenComplete(() {
-        if(mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            content: Text("Imported: ${result.files.single.path}", style: lighttitlestyle(context).copyWith(color: Colors.blueAccent),
-          )));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              content: Text(
+                "Imported: ${result.files.single.path}",
+                style: lighttitlestyle(
+                  context,
+                ).copyWith(color: Colors.blueAccent),
+              ),
+            ),
+          );
           reloadDb();
         }
       });
@@ -100,14 +109,16 @@ class _SettingsPageState extends State<SettingsPage> {
     Navigator.pop(context);
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Text("Settings", style: titlestyle(context).copyWith(color: Colors.blueAccent)),
+        title: Text(
+          "Settings",
+          style: titlestyle(context).copyWith(color: Colors.blueAccent),
+        ),
       ),
       body: BlocBuilder<ThemeCubit, bool>(
         builder: (context, state) {
@@ -124,11 +135,67 @@ class _SettingsPageState extends State<SettingsPage> {
                   },
                 ),
               ),
-              ListTile(
-                leading: Icon(Icons.upload_rounded),
-                title: Text("Import Data", style: lighttitlestyle(context)),
-                onTap: () {
-                  importJson();
+              BlocBuilder<CurrencyCubit, String>(
+                builder: (context, state) {
+                  return ListTile(
+                    leading: Icon(Icons.money_rounded),
+                    title: Text(
+                      "Change currency",
+                      style: lighttitlestyle(context),
+                    ),
+                    trailing: Text(
+                      state,
+                      style: lighttitlestyle(
+                        context,
+                      ).copyWith(color: Colors.blueAccent.shade100),
+                    ),
+                    onTap: () => showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text(
+                            "Change currency",
+                            style: titlestyle(context).copyWith(fontSize: 16.sp),
+                          ),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ListTile(
+                                leading: Text("€", style: lighttitlestyle(context),),
+                                title: Text("EUR", style: lighttitlestyle(context)),
+                                onTap: () {
+                                  context.read<CurrencyCubit>().selectedCurrency(
+                                    "€",
+                                  );
+                                  Navigator.pop(context);
+                                },
+                              ),
+                              ListTile(
+                                leading: Text("\$", style: lighttitlestyle(context),),
+                                title: Text("USD", style: lighttitlestyle(context)),
+                                onTap: () {
+                                  context.read<CurrencyCubit>().selectedCurrency(
+                                    "\$",
+                                  );
+                                  Navigator.pop(context);
+                                },
+                              ),
+                              ListTile(
+                                leading: Text("रू", style: lighttitlestyle(context),),
+                                title: Text("NPR", style: lighttitlestyle(context)),
+                                onTap: () {
+                                  context.read<CurrencyCubit>().selectedCurrency(
+                                    "Rs.",
+                                  );
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    )
+                  );
                 },
               ),
               ListTile(
@@ -138,21 +205,40 @@ class _SettingsPageState extends State<SettingsPage> {
                   List<Map<String, dynamic>> data = await DbController()
                       .exportExpenses();
                   await saveJsonData(data).whenComplete(() {
-                    if(context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        backgroundColor: Theme.of(context).colorScheme.surface,
-                        action: SnackBarAction(label: "Open", onPressed: () {
-                          openFileManager(
-                            androidConfig: AndroidConfig(
-                              folderPath: "/storage/emulated/0/Download",
-                              folderType: AndroidFolderType.download
-                            ),
-                          );
-                        }),
-                        content: Text("Exported: /storage/emulated/0/Download/isar_backup_expenses.json", style: lighttitlestyle(context).copyWith(color: Colors.blueAccent),
-                      )));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.surface,
+                          action: SnackBarAction(
+                            label: "Open",
+                            onPressed: () {
+                              openFileManager(
+                                androidConfig: AndroidConfig(
+                                  folderPath: "/storage/emulated/0/Download",
+                                  folderType: AndroidFolderType.download,
+                                ),
+                              );
+                            },
+                          ),
+                          content: Text(
+                            "Exported: /storage/emulated/0/Download/isar_backup_expenses.json",
+                            style: lighttitlestyle(
+                              context,
+                            ).copyWith(color: Colors.blueAccent),
+                          ),
+                        ),
+                      );
                     }
-                  },);
+                  });
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.upload_rounded),
+                title: Text("Import Data", style: lighttitlestyle(context)),
+                onTap: () {
+                  importJson();
                 },
               ),
               ListTile(
@@ -160,12 +246,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: Text("Delete All", style: lighttitlestyle(context)),
                 onTap: () async {
                   CustomDialogs.deleteDialog(
-                    context, 
-                    title: "Delete All?", 
-                    content: "Are you sure you want to delete all your expenses data?",
+                    context,
+                    title: "Delete All?",
+                    content:
+                        "Are you sure you want to delete all your expenses data?",
                     onPressed: () async {
-                      await DbController.deleteAllExpenses().whenComplete(() => reloadDb());
-                      if(context.mounted) Navigator.pop(context);
+                      await DbController.deleteAllExpenses().whenComplete(
+                        () => reloadDb(),
+                      );
+                      if (context.mounted) Navigator.pop(context);
                     },
                   );
                 },
