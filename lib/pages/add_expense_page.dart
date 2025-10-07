@@ -28,7 +28,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
     "4",
     "5",
     "6",
-    "",
+    "⌫",
     "7",
     "8",
     "9",
@@ -237,9 +237,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
                           calInputs[index].toString(),
                         );
                       } else if (calInputs[index] == "C") {
-                        context.read<AmountCubit>().clear();
+                        context.read<AmountCubit>().clearAll();
                       // } else if (calInputs[index] == "") {
                       //   context.read<CategoryCubit>().addCategories();
+                      } else if (calInputs[index] == "⌫") {
+                        context.read<AmountCubit>().clear();
                       } else if (calInputs[index] == "✔️") {
                         if(selectedCategory != "") {
                           String actualamt = "";
@@ -267,7 +269,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                           });
                           if (context.mounted) {
                             // fetchDb();
-                            context.read<AmountCubit>().clear();
+                            context.read<AmountCubit>().clearAll();
                             if (widget.tab == 0) {
                               context.read<ExpensesCubit>().fetchExpenses();
                             } else if (widget.tab == 1) {

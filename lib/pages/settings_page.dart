@@ -16,6 +16,7 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 
 import '../cubit/expenses_cubit/expenses_cubit.dart';
 import '../utils/dialogs.dart';
+import '../utils/shared_pref.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key, required this.tab});
@@ -60,7 +61,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final jsonString = jsonEncode(jsonData);
 
     // Get the file reference
-    final file = await getLocalFile('isar_backup_expenses.json');
+    final file = await getLocalFile('mytracker_backup_expenses.json');
 
     // Write the string to the file
     await file?.writeAsString(jsonString);
@@ -81,12 +82,12 @@ class _SettingsPageState extends State<SettingsPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              backgroundColor: Theme.of(context).colorScheme.surface,
+              backgroundColor: Colors.green,
               content: Text(
-                "Imported: ${result.files.single.path}",
+                "Imported: ${result.files.single.name}",
                 style: lighttitlestyle(
                   context,
-                ).copyWith(color: Colors.blueAccent),
+                ).copyWith(color: Colors.white),
               ),
             ),
           );
@@ -173,7 +174,9 @@ class _SettingsPageState extends State<SettingsPage> {
                               ListTile(
                                 leading: Text("\$", style: lighttitlestyle(context),),
                                 title: Text("USD", style: lighttitlestyle(context)),
-                                onTap: () {
+                                onTap: SharedPref.read("USD") == null
+                                ? null
+                                : () {
                                   context.read<CurrencyCubit>().selectedCurrency(
                                     "\$",
                                   );
@@ -183,7 +186,9 @@ class _SettingsPageState extends State<SettingsPage> {
                               ListTile(
                                 leading: Text("रू", style: lighttitlestyle(context),),
                                 title: Text("NPR", style: lighttitlestyle(context)),
-                                onTap: () {
+                                onTap:SharedPref.read("USD") == null
+                                ? null 
+                                : () {
                                   context.read<CurrencyCubit>().selectedCurrency(
                                     "Rs.",
                                   );
@@ -208,11 +213,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.surface,
+                          backgroundColor: Colors.green,
                           action: SnackBarAction(
                             label: "Open",
+                            textColor: Colors.white,
                             onPressed: () {
                               openFileManager(
                                 androidConfig: AndroidConfig(
@@ -223,10 +227,10 @@ class _SettingsPageState extends State<SettingsPage> {
                             },
                           ),
                           content: Text(
-                            "Exported: /storage/emulated/0/Download/isar_backup_expenses.json",
+                            "Exported: /storage/emulated/0/Download/mytracker_backup_expenses.json",
                             style: lighttitlestyle(
                               context,
-                            ).copyWith(color: Colors.blueAccent),
+                            ).copyWith(color: Colors.white),
                           ),
                         ),
                       );

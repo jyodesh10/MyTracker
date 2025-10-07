@@ -17,6 +17,15 @@ class AmountCubit extends Cubit<String> {
   }
 
   clear() {
+    if(userValue.isNotEmpty) {
+      userValue = userValue.substring(0, userValue.length - 1);
+      emit(userValue);
+    } else {
+      emit(userValue);
+    }
+  }
+
+  clearAll() {
     userValue = "";
     emit(userValue);
   }

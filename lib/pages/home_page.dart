@@ -74,12 +74,19 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   firstTimeLaunch() async {
+    context.read<CurrencyCubit>().fetchCurrencyOnceAWeek();
     if(SharedPref.read("firstTime") == null || SharedPref.read("firstTime") == true) {
       SharedPref.write("firstTime", false);
-      context.read<CurrencyCubit>().fetchCurrency();
-    } else {
-      SharedPref.write("firstTime", false);
     }
+  }
+
+  removeAllPrefs() async {
+    SharedPref.remove("firstTime");
+    SharedPref.remove("selectedCurrency");
+    SharedPref.remove("tab");
+    SharedPref.remove("USD");
+    SharedPref.remove("INR");
+    SharedPref.remove("EUR");
   }
   
   void handleTabChange(int value) async {
@@ -135,68 +142,77 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                         Stack(
                           alignment: Alignment.center,
                           children: [
-                            AspectRatio(
-                              aspectRatio: 1.4,
-                              child: PieChart(
-                                PieChartData(
-                                  centerSpaceRadius: 40.sp,
-                                  sectionsSpace: 5.sp,
-                                  sections: state is ExpensesLoaded 
-                                    ? List.generate(state.category.length , (index) {
-                                      cat = state.category.map((e) => {
-                                        "name": e,
-                                        "color": harmoniousColors[index % harmoniousColors.length],
-                                      }).toList();
-                                      return PieChartSectionData(
-                                        value: double.parse(sumup(state.expenses.where((e) => e.category == state.category[index]).toList().map((e) => double.parse(e.amount.toString())).toList())),
-                                        title: state.category[index],
-                                        titleStyle: lighttitlestyle(context).copyWith(fontSize: 12.sp),
-                                        color: harmoniousColors[index % harmoniousColors.length],
-                                        radius: 22.sp,
-                                        showTitle: false,
-                                        titlePositionPercentageOffset: 2,
-                                      );
-                                    })
-                                    : [
-                                      PieChartSectionData(
-                                        badgePositionPercentageOffset: 0.5,
+                            state is ExpensesLoaded && state.expenses.isNotEmpty
+                              ? Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  AspectRatio(
+                                    aspectRatio: 1.4,
+                                    child: PieChart(
+                                      PieChartData(
+                                        centerSpaceRadius: 40.sp,
+                                        sectionsSpace: 5.sp,
+                                        sections:List.generate(state.category.length , (index) {
+                                          cat = state.category.map((e) => {
+                                            "name": e,
+                                            "color": harmoniousColors[index % harmoniousColors.length],
+                                          }).toList();
+                                          return PieChartSectionData(
+                                            value: double.parse(sumup(state.expenses.where((e) => e.category == state.category[index]).toList().map((e) => double.parse(e.amount.toString())).toList())),
+                                            title: state.category[index],
+                                            titleStyle: lighttitlestyle(context).copyWith(fontSize: 12.sp),
+                                            color: harmoniousColors[index % harmoniousColors.length],
+                                            radius: 22.sp,
+                                            showTitle: false,
+                                            titlePositionPercentageOffset: 2,
+                                          );
+                                        })
                                       ),
-                                      PieChartSectionData(
-                                        badgePositionPercentageOffset: 0.5,
-                                      ),
-                                      PieChartSectionData(
-                                        badgePositionPercentageOffset: 0.5,
-                                      ),
-                                    ],
-                                ),
-                              ),
-                            ),
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxHeight: 40.sp,
-                                maxWidth: 45.w,
-                              ),
-                              child: FittedBox(
-                                child: Text(
-                                  state is ExpensesLoaded
-                                    ? "${getCurrency()} ${sumup(state.expenses.map((e) => double.parse(e.amount.toString())).toList())}"
-                                    : "${getCurrency()} 000",
-                                  style: titlestyle(context).copyWith(
-                                    color: Colors.blueAccent,
-                                    fontSize: 22.sp,
+                                    ),
                                   ),
-                                  maxLines: 1,
-                                ),
+                                  ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxHeight: 40.sp,
+                                      maxWidth: 45.w,
+                                    ),
+                                    child: FittedBox(
+                                      child: Text(
+                                        "${getCurrency()} ${sumup(state.expenses.map((e) => double.parse(e.amount.toString())).toList())}",
+                                        style: titlestyle(context).copyWith(
+                                          color: Colors.blueAccent,
+                                          fontSize: 22.sp,
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                    )
+                                  ),
+                                ],
                               )
-                            ),
+                            : state is ExpensesLoading
+                             ? SizedBox(height: 70.sp)
+                            : SizedBox(height: 70.sp, width: double.infinity, child: Center(child: Text("Chart will appear here.", style: lighttitlestyle(context),))),
                             Positioned(
                               top: 10.sp,
                               right: 15.sp,
-                              child: IconButton(
-                                onPressed: () {
-                                  Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage(tab: tab,)));
-                                }, 
-                                icon: Icon(Icons.settings)
+                              child: Container(
+                                height: 26.sp,
+                                width: 26.sp,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context).shadowColor
+                                    )
+                                  ]
+                                ),
+                                child: IconButton(
+                                  onPressed: () {
+                                    Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage(tab: tab,)));
+                                  }, 
+                                  tooltip: "Settings",
+                                  icon: Icon(Icons.settings, color: Colors.blueAccent, size: 19.sp)
+                                ),
                               ))
                           ],
                         ),
@@ -280,12 +296,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blueAccent.shade200,
         onPressed: () {
-          context.read<AmountCubit>().clear();
+          context.read<AmountCubit>().clearAll();
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => AddExpensePage(tab: tab,)),
           );
         },
+        tooltip: "Add Expense",
         child: Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -357,7 +374,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       labelTextStyle:WidgetStateProperty.all(lighttitlestyle(context).copyWith(fontSize: 15.sp)),
                       child: Text("Edit"),
                       onTap: () {
-                        context.read<AmountCubit>().clear();
+                        context.read<AmountCubit>().clearAll();
                         Navigator.push(context, MaterialPageRoute(
                           builder: (context) => EditExpensePage(tab: tab, expenseData: state.expenses[index], editAmount: listCurrencyAmt(state.expenses[index].amount.toString()),),
                         ));
