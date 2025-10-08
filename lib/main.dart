@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_tracker/cubit/category_cubit/category_cubit.dart';
 import 'package:my_tracker/cubit/currency_cubit/currency_cubit.dart';
 import 'package:my_tracker/cubit/expenses_cubit/expenses_cubit.dart';
+import 'package:my_tracker/cubit/selected_expense_cubit/selected_expense_cubit.dart';
 import 'package:my_tracker/cubit/theme_cubit/theme_cubit.dart';
 import 'package:my_tracker/db_controller/db_controller.dart';
 import 'package:my_tracker/pages/home_page.dart';
@@ -67,6 +68,9 @@ class MyApp extends StatelessWidget {
               ),
               BlocProvider(
                 create: (context) => CurrencyCubit()..checkcurrency(),
+              ),
+              BlocProvider(
+                create: (context) => SelectedExpenseCubit(),
               ),
             ],
             child: MaterialApp(

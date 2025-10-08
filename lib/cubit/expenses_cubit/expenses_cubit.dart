@@ -101,4 +101,21 @@ class ExpensesCubit extends Cubit<ExpensesState> {
       emit(ExpensesError());
     }
   }
+
+  deleteMultipleItem({required List<int> ids,required int tab}) async {
+    try {
+      await DbController.isar.writeTxn(() async {
+        await DbController.isar.expenses.deleteAll(ids);
+      });
+      if(tab == 0) {
+        fetchExpenses();
+      } else if(tab == 1) {
+        fetchExpensesToday();
+      } else {
+        fetchExpensesThisMonth();
+      }
+    } on Exception {
+      emit(ExpensesError());
+    }
+  }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_tracker/cubit/amount_cubit/amount_cubit.dart';
 import 'package:my_tracker/cubit/currency_cubit/currency_cubit.dart';
 import 'package:my_tracker/cubit/expenses_cubit/expenses_cubit.dart';
+import 'package:my_tracker/cubit/selected_expense_cubit/selected_expense_cubit.dart';
 import 'package:my_tracker/pages/add_expense_page.dart';
 import 'package:my_tracker/pages/edit_expense_page.dart';
 import 'package:my_tracker/pages/settings_page.dart';
@@ -93,6 +94,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     if (tab == value) return; // Do nothing if tab hasn't changed
     tab = value;
     SharedPref.write("tab", value);
+    context.read<SelectedExpenseCubit>().clearExpenses();
     if (value == 0) {
       context.read<ExpensesCubit>().fetchExpenses();
     } else if (value == 1) {
@@ -134,6 +136,33 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
+              context.watch<SelectedExpenseCubit>().state.isNotEmpty
+                ? SliverAppBar(
+                  elevation: 0,
+                  pinned: true,
+                  floating: false,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  surfaceTintColor: Theme.of(context).colorScheme.surface,
+                  // shadowColor: Theme.of(context).colorScheme.surface,
+                  actions: [
+                    InkWell(
+                      onTap: () {
+                        context.read<ExpensesCubit>().deleteMultipleItem(ids: context.read<SelectedExpenseCubit>().state, tab: tab);
+                        context.read<SelectedExpenseCubit>().clearExpenses();
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 15.sp,),
+                        child: Row(
+                          children: [
+                            Text("Delete", style: lighttitlestyle(context).copyWith(color: Colors.redAccent, fontWeight: FontWeight.w500),),
+                            Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20.sp,)
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                )
+                : SliverToBoxAdapter(child: SizedBox()),
               SliverToBoxAdapter(
                 child: BlocBuilder<ExpensesCubit, ExpensesState>(
                   builder: (context, state) {
@@ -314,92 +343,116 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       itemCount: state.expenses.length,
       padding: EdgeInsets.only(bottom: 30.sp),
       itemBuilder: (context, index) {
-        return ListTile(
-          contentPadding: EdgeInsets.only(left: 15.sp),
-          leading: CircleAvatar(
-            backgroundColor: harmoniousColors[cat.indexWhere((e) => e["name"] == state.expenses[index].category) % harmoniousColors.length], 
-            radius: 15.sp,
-            child: Text(state.expenses[index].category.toString()[0], 
-              style: titlestyle(context).copyWith(
-                color: Colors.white,
-                fontSize: 14.sp,
-              ), 
-            ),
-          ),
-          title: Text(
-            state.expenses[index].category.toString(),
-            style: lighttitlestyle(context),
-          ),
-          subtitle: Text(
-            state.expenses[index].description.toString(),
-            style: lighttitlestyle(context).copyWith(
-              color: Colors.grey,
-              fontSize: 14.sp,
-            ),
-          ),
-          trailing: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    "- ${getCurrency()} ${listCurrencyAmt(state.expenses[index].amount.toString())}",
-                    style: lighttitlestyle(context).copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
+        return BlocBuilder<SelectedExpenseCubit, List<int>>(
+          builder: (context, selectedstate) {
+            return ListTile(
+                  onLongPress: () {
+                    if(selectedstate.contains(state.expenses[index].id)) {
+                      context.read<SelectedExpenseCubit>().unselectExpense(expense: state.expenses[index].id);
+                    } else {
+                      context.read<SelectedExpenseCubit>().selectExpense(expense: state.expenses[index].id);
+                    }
+                  },
+                  onTap: () {
+                    if(selectedstate.isNotEmpty) {
+                      if(selectedstate.contains(state.expenses[index].id)) {
+                        context.read<SelectedExpenseCubit>().unselectExpense(expense: state.expenses[index].id);
+                      } else {
+                        context.read<SelectedExpenseCubit>().selectExpense(expense: state.expenses[index].id);
+                      }  
+                    }
+                  },
+                  selected: selectedstate.contains(state.expenses[index].id),
+                  selectedColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  selectedTileColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  contentPadding: EdgeInsets.only(left: 15.sp),
+                  leading: CircleAvatar(
+                    backgroundColor: harmoniousColors[cat.indexWhere((e) => e["name"] == state.expenses[index].category) % harmoniousColors.length], 
+                    radius: 15.sp,
+                    child: Text(state.expenses[index].category.toString()[0], 
+                      style: titlestyle(context).copyWith(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                      ), 
                     ),
                   ),
-                  Text(
-                    dateFormatter(state.expenses[index].date),
+                  title: Text(
+                    state.expenses[index].category.toString(),
+                    style: lighttitlestyle(context),
+                  ),
+                  subtitle: Text(
+                    state.expenses[index].description.toString(),
                     style: lighttitlestyle(context).copyWith(
                       color: Colors.grey,
                       fontSize: 14.sp,
                     ),
                   ),
-                ],
-              ),
-              PopupMenuButton(
-                color: Theme.of(context).colorScheme.surfaceBright /* Colors.white.withAlpha(250) */,
-                borderRadius: BorderRadius.circular(15.sp),
-                shape: RoundedSuperellipseBorder(
-                  borderRadius: BorderRadius.circular(15.sp),
-                ),
-
-                itemBuilder: (context) {
-                  return [
-                    PopupMenuItem(
-                      labelTextStyle:WidgetStateProperty.all(lighttitlestyle(context).copyWith(fontSize: 15.sp)),
-                      child: Text("Edit"),
-                      onTap: () {
-                        context.read<AmountCubit>().clearAll();
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (context) => EditExpensePage(tab: tab, expenseData: state.expenses[index], editAmount: listCurrencyAmt(state.expenses[index].amount.toString()),),
-                        ));
-                      },
-                    ),
-                    PopupMenuItem(
-                      labelTextStyle:WidgetStateProperty.all(lighttitlestyle(context).copyWith(fontSize: 15.sp)),
-                      child: Text("Delete"),
-                      onTap: () {
-                        CustomDialogs.deleteDialog(
-                          context, 
-                          title: "Delete Expense", 
-                          content: "Are you sure you want to delete this expense?",
-                          onPressed: () {
-                            context.read<ExpensesCubit>().deleteItem(id: state.expenses[index].id, tab: tab);
-                            Navigator.pop(context);
-                          },
-                        );
-                      },
-                    )
-                  ];
-                },
-              )
-            ],
-          ),
+                  trailing: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            "- ${getCurrency()} ${listCurrencyAmt(state.expenses[index].amount.toString())}",
+                            style: lighttitlestyle(context).copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                          Text(
+                            dateFormatter(state.expenses[index].date),
+                            style: lighttitlestyle(context).copyWith(
+                              color: Colors.grey,
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                      PopupMenuButton(
+                        // color:  Colors.blue.withAlpha(250),
+                        iconColor: Theme.of(context).colorScheme.inverseSurface,
+                        borderRadius: BorderRadius.circular(15.sp),
+                        shape: RoundedSuperellipseBorder(
+                          borderRadius: BorderRadius.circular(15.sp),
+                        ),
+        
+                        itemBuilder: (context) {
+                          return [
+                            PopupMenuItem(
+                              labelTextStyle:WidgetStateProperty.all(lighttitlestyle(context).copyWith(fontSize: 15.sp)),
+                              child: Text("Edit"),
+                              onTap: () {
+                                context.read<AmountCubit>().clearAll();
+                                Navigator.push(context, MaterialPageRoute(
+                                  builder: (context) => EditExpensePage(tab: tab, expenseData: state.expenses[index], editAmount: listCurrencyAmt(state.expenses[index].amount.toString()),),
+                                ));
+                              },
+                            ),
+                            PopupMenuItem(
+                              labelTextStyle:WidgetStateProperty.all(lighttitlestyle(context).copyWith(fontSize: 15.sp)),
+                              child: Text("Delete"),
+                              onTap: () {
+                                CustomDialogs.deleteDialog(
+                                  context, 
+                                  title: "Delete Expense", 
+                                  content: "Are you sure you want to delete this expense?",
+                                  onPressed: () {
+                                    context.read<ExpensesCubit>().deleteItem(id: state.expenses[index].id, tab: tab);
+                                    Navigator.pop(context);
+                                  },
+                                );
+                              },
+                            )
+                          ];
+                        },
+                      )
+                    ],
+                  ),
+                );
+          },
         );
       },
     );
