@@ -1,0 +1,1 @@
+select mutiple items - delete
