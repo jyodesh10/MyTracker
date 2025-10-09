@@ -6,10 +6,10 @@ import 'package:my_tracker/cubit/expenses_cubit/expenses_cubit.dart';
 import 'package:my_tracker/cubit/selected_expense_cubit/selected_expense_cubit.dart';
 import 'package:my_tracker/cubit/theme_cubit/theme_cubit.dart';
 import 'package:my_tracker/db_controller/db_controller.dart';
-import 'package:my_tracker/pages/home_page.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 
 import 'cubit/amount_cubit/amount_cubit.dart';
+import 'pages/splash_page.dart';
 import 'utils/shared_pref.dart';
 
 final lightTheme = ThemeData(
@@ -79,7 +79,7 @@ class MyApp extends StatelessWidget {
               theme: lightTheme,
               darkTheme: darkTheme,
               themeMode: state ?  ThemeMode.dark : ThemeMode.light,
-              home: HomePage(),
+              home: SplashPage(),
             ),
           ),
         );

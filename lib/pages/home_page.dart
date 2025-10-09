@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:my_tracker/cubit/amount_cubit/amount_cubit.dart';
 import 'package:my_tracker/cubit/currency_cubit/currency_cubit.dart';
 import 'package:my_tracker/cubit/expenses_cubit/expenses_cubit.dart';
@@ -62,6 +63,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   void initState() {
     super.initState();
     firstTimeLaunch();
+    checkForUpdate();
     tabController = TabController(initialIndex: SharedPref.read("tab") ?? 0, length: 4, vsync: this, animationDuration: Duration(milliseconds: 100))..addListener(() {
       handleTabChange(tabController.index);
     },);
@@ -126,6 +128,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       double usd = double.parse(SharedPref.read("USD").toString());
       return (double.parse(amt) * usd).toStringAsFixed(2);
     }
+  }
+
+  Future<void> checkForUpdate() async {
+    InAppUpdate.checkForUpdate().then((info) {
+      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+        InAppUpdate.performImmediateUpdate();
+      }
+    });
   }
 
   @override

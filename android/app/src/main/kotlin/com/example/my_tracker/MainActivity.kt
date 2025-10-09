@@ -1,4 +1,4 @@
-package com.example.my_tracker
+package com.wazzalabs.my_tracker
 
 import io.flutter.embedding.android.FlutterActivity
 
