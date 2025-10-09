@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:isar/isar.dart';
 import 'package:my_tracker/cubit/currency_cubit/currency_cubit.dart';
 import 'package:my_tracker/cubit/theme_cubit/theme_cubit.dart';
 import 'package:my_tracker/db_controller/db_controller.dart';
@@ -69,31 +70,42 @@ class _SettingsPageState extends State<SettingsPage> {
 
   importJson() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      allowedExtensions: [],
+      allowedExtensions: ['json'],
       type: FileType.custom,
     );
-
+    
     if (result != null) {
       File file = File(result.files.single.path!);
       Uint8List jsonBytes = file.readAsBytesSync();
-
-      // jsonDecode(await file.readAsString());
-      await DbController.importExpenses(jsonBytes).whenComplete(() {
+      try {
+        await DbController.importExpenses(jsonBytes);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.green,
               content: Text(
                 "Imported: ${result.files.single.name}",
+                style: lighttitlestyle(context).copyWith(color: Colors.white),
+              ),
+            ),
+          );
+          reloadDb();
+        }
+      } on IsarError catch (e) {
+        if(mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.red,
+              content: Text(
+                e.message.toString(),
                 style: lighttitlestyle(
                   context,
                 ).copyWith(color: Colors.white),
               ),
             ),
           );
-          reloadDb();
         }
-      });
+      }
     } else {
       // User canceled the picker
     }
@@ -206,6 +218,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: Icon(Icons.download_rounded),
                 title: Text("Export Data", style: lighttitlestyle(context)),
+                subtitle: Text("Exported as json", style: lighttitlestyle(context).copyWith(fontSize: 12.5.sp)),
                 onTap: () async {
                   List<Map<String, dynamic>> data = await DbController()
                       .exportExpenses();
@@ -241,6 +254,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ListTile(
                 leading: Icon(Icons.upload_rounded),
                 title: Text("Import Data", style: lighttitlestyle(context)),
+                subtitle: Text("Only json file allowed", style: lighttitlestyle(context).copyWith(fontSize: 12.5.sp)),
                 onTap: () {
                   importJson();
                 },

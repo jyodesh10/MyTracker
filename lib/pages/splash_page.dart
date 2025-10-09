@@ -40,7 +40,7 @@ class _SplashPageState extends State<SplashPage> {
               ),
             ),
             Text("My Tracker", style: titlestyle(context),),
-            Text("Track your expenses.", style: lighttitlestyle(context),),
+            // Text("Track your expenses.", style: lighttitlestyle(context),),
           ],
         ),
       ),
